@@ -166,6 +166,7 @@ contract ThunderLoan is
     /*//////////////////////////////////////////////////////////////
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    // @audit-info: Use constants instead of literals
     function initialize(address tswapAddress) external initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
@@ -258,6 +259,7 @@ contract ThunderLoan is
         s_currentlyFlashLoaning[token] = false;
     }
 
+    // @audit: Function not used internally. Can be marked external
     function repay(IERC20 token, uint256 amount) public {
         if (!s_currentlyFlashLoaning[token]) {
             revert ThunderLoan__NotCurrentlyFlashLoaning();
@@ -266,6 +268,7 @@ contract ThunderLoan is
         token.safeTransferFrom(msg.sender, address(assetToken), amount);
     }
 
+    // follow up: Centralisation risk
     function setAllowedToken(
         IERC20 token,
         bool allowed
@@ -310,6 +313,7 @@ contract ThunderLoan is
         fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
     }
 
+    // follow up: Centralisation risk
     function updateFlashLoanFee(uint256 newFee) external onlyOwner {
         if (newFee > s_feePrecision) {
             revert ThunderLoan__BadNewFee();
@@ -322,10 +326,12 @@ contract ThunderLoan is
         return address(s_tokenToAssetToken[token]) != address(0);
     }
 
+    // @audit: Function not used internally. Can be marked external
     function getAssetFromToken(IERC20 token) public view returns (AssetToken) {
         return s_tokenToAssetToken[token];
     }
 
+    // @audit: Function not used internally. Can be marked external
     function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) {
         return s_currentlyFlashLoaning[token];
     }
@@ -338,6 +344,7 @@ contract ThunderLoan is
         return s_feePrecision;
     }
 
+    // follow up: Centralisation risk
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
