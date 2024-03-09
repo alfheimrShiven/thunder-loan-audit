@@ -21,6 +21,9 @@ contract OracleUpgradeable is Initializable {
         s_poolFactory = poolFactoryAddress;
     }
 
+    // q interacting with an external contract
+    // q can the price be manipulated?
+    // @audit-info: the tests for `getPool()` and `getPriceOfOnePoolTokenInWeith()` should be using forked tests for IPoolToken protocol instead of minimised mocks.
     function getPriceInWeth(address token) public view returns (uint256) {
         address swapPoolOfToken = IPoolFactory(s_poolFactory).getPool(token);
         return ITSwapPool(swapPoolOfToken).getPriceOfOnePoolTokenInWeth();

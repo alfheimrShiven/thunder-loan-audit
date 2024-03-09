@@ -167,6 +167,8 @@ contract ThunderLoanUpgraded is
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     // @audit-info: Constants should be used instead of literals
+    // @audit-info: change `tswapAddress` to a more generic variable name `poolFactoryAddress`
+    // @audit-low: initializers can be front-run.
     function initialize(address tswapAddress) external initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
