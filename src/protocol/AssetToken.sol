@@ -24,6 +24,8 @@ contract AssetToken is ERC20 {
     // The underlying per asset exchange rate
     // ie: s_exchangeRate = 2
     // means 1 asset token is worth 2 underlying tokens
+    // e underlying tokens = USDC
+    // e asset token = Protocol/Liquidity token
     uint256 private s_exchangeRate;
     uint256 public constant EXCHANGE_RATE_PRECISION = 1e18;
     uint256 private constant STARTING_EXCHANGE_RATE = 1e18;
@@ -56,6 +58,8 @@ contract AssetToken is ERC20 {
     constructor(
         address thunderLoan,
         IERC20 underlying,
+        // q Are underlying token (USDC) stored in AssetToken.sol instead of Thunderloan.sol?
+        // q where are the underlying tokens stored?
         string memory assetName,
         string memory assetSymbol
     )
@@ -81,6 +85,9 @@ contract AssetToken is ERC20 {
         address to,
         uint256 amount
     ) external onlyThunderLoan {
+        // q any weird ERC20 stuff that we should be aware of?
+        // q What if USDC blacklists AssetToken.sol
+        // q What if USDC blacklists Thunderloan.sol
         i_underlying.safeTransfer(to, amount);
     }
 
@@ -90,9 +97,13 @@ contract AssetToken is ERC20 {
         // 3. So if the fee is 1e18, and the total supply is 2e18, the exchange rate be multiplied by 1.5
         // if the fee is 0.5 ETH, and the total supply is 4, the exchange rate should be multiplied by 1.125
         // it should always go up, never down
+        // e This is an INVARIANT!!!!!!!!
+        // q But why should the exchange rate always go up?
         // newExchangeRate = oldExchangeRate * (totalSupply + fee) / totalSupply
         // newExchangeRate = 1 (4 + 0.5) / 4
         // newExchangeRate = 1.125
+        // q what if the totalSupply = 0? Won't that break the system?
+        // @audit-gas: reading from storage `s_exchangeRate` too many times. Maybe use a memory variable to save gas.
         uint256 newExchangeRate = (s_exchangeRate * (totalSupply() + fee)) /
             totalSupply();
 
