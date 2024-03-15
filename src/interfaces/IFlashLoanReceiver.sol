@@ -11,7 +11,8 @@ pragma solidity 0.8.20;
  */
 interface IFlashLoanReceiver {
     // @audit-info: Pls add natspec
-    // q is the `token` the token being borrowed?
+    // qanswered is the `token` the token being borrowed?
+    // a yes!
     function executeOperation(
         address token,
         uint256 amount,

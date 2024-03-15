@@ -5,6 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+// e This is the ERC20 token of the flashloan protocol, given to the lp in return for the liquidity provided.
 contract AssetToken is ERC20 {
     error AssetToken__onlyThunderLoan();
     error AssetToken__ExhangeRateCanOnlyIncrease(
@@ -100,8 +101,13 @@ contract AssetToken is ERC20 {
         // e This is an INVARIANT!!!!!!!!
         // q But why should the exchange rate always go up?
         // newExchangeRate = oldExchangeRate * (totalSupply + fee) / totalSupply
+        // Eg 1:
         // newExchangeRate = 1 (4 + 0.5) / 4
         // newExchangeRate = 1.125
+        // Eg 2:
+        // newExchangeRate = 1 (6 + 1) / 6
+        // newExchangeRate = 1.16
+
         // q what if the totalSupply = 0? Won't that break the system?
         // @audit-gas: reading from storage `s_exchangeRate` too many times. Maybe use a memory variable to save gas.
         uint256 newExchangeRate = (s_exchangeRate * (totalSupply() + fee)) /

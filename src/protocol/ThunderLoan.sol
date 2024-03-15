@@ -105,6 +105,7 @@ contract ThunderLoan is
     mapping(IERC20 => AssetToken) public s_tokenToAssetToken;
 
     // The fee in WEI, it should have 18 decimals. Each flash loan takes a flat fee of the token price.
+    // @audit-info: `s_feePrecision` should be immutable.
     uint256 private s_feePrecision;
     uint256 private s_flashLoanFee; // 0.3% ETH fee
 
@@ -177,6 +178,7 @@ contract ThunderLoan is
         s_flashLoanFee = 3e15; // 0.3% ETH fee
     }
 
+    // @audit-info: where is the natspec???
     function deposit(
         IERC20 token,
         uint256 amount
@@ -187,7 +189,12 @@ contract ThunderLoan is
             exchangeRate;
         emit Deposit(msg.sender, token, amount);
         assetToken.mint(msg.sender, mintAmount);
+        // @audit-followup
+        // q why is the flash loan fee calculation happening in deposit()?
         uint256 calculatedFee = getCalculatedFee(token, amount);
+
+        // q why are we updating exchange rate on deposit?
+        // q Is it because the total supply increases?
         assetToken.updateExchangeRate(calculatedFee);
         token.safeTransferFrom(msg.sender, address(assetToken), amount);
     }
@@ -195,6 +202,7 @@ contract ThunderLoan is
     /// @notice Withdraws the underlying token from the asset token
     /// @param token The token they want to withdraw from
     /// @param amountOfAssetToken The amount of the underlying they want to withdraw
+    // @audit ✅
     function redeem(
         IERC20 token,
         uint256 amountOfAssetToken
@@ -212,11 +220,12 @@ contract ThunderLoan is
     }
 
     // @follow-up Reentrancy warning by Slither
+    // @audit ✅
     function flashloan(
-        address receiverAddress,
-        IERC20 token,
-        uint256 amount,
-        bytes calldata params
+        address receiverAddress, // e the contract address to receive the flashloan
+        IERC20 token, // e the token being loaned
+        uint256 amount, // e the amount being loaned
+        bytes calldata params // e the params being sent to the `executeOperation()` required to be implemented by any smart contract taking a flash loan
     ) external revertIfZero(amount) revertIfNotAllowedToken(token) {
         AssetToken assetToken = s_tokenToAssetToken[token];
         uint256 startingBalance = IERC20(token).balanceOf(address(assetToken));
@@ -229,15 +238,19 @@ contract ThunderLoan is
             revert ThunderLoan__CallerIsNotContract();
         }
 
-        uint256 fee = getCalculatedFee(token, amount);
+        uint256 fee = getCalculatedFee(token, amount); // e the fee for processing the flash loan
+
         // slither-disable-next-line reentrancy-vulnerabilities-2 reentrancy-vulnerabilities-3
-        assetToken.updateExchangeRate(fee);
+        assetToken.updateExchangeRate(fee); // e basically, the protocol will earn a `fee` from the loaner for the particular token being loaned, thus increasing the total supply of that token in the protocol. And if the total supply increases, the exchange rate for that particular token will change (should ideally increase with increase in supply).
 
         emit FlashLoan(receiverAddress, token, amount, fee, params);
 
         s_currentlyFlashLoaning[token] = true;
-        assetToken.transferUnderlyingTo(receiverAddress, amount);
+        assetToken.transferUnderlyingTo(receiverAddress, amount); // e will transfer the actual `underlying` token to the receiver of flash loan
+
         // slither-disable-next-line unused-return reentrancy-vulnerabilities-2
+        // e external call to the receiver smart-contract, which should take the loan and return it in the same trnx.
+        // q are we assuming that the receiver contract will certainly implement `executeOperation()`?? Can't this be used for reentrancy attack?
         receiverAddress.functionCall(
             abi.encodeCall(
                 IFlashLoanReceiver.executeOperation,
@@ -261,6 +274,8 @@ contract ThunderLoan is
         s_currentlyFlashLoaning[token] = false;
     }
 
+    // @audit: where is the natspec??
+    // e will be used to repay the flashloan by the receiver in their implementation of the `executeOperation()`
     // @audit: Function not used internally. Can be marked external
     function repay(IERC20 token, uint256 amount) public {
         if (!s_currentlyFlashLoaning[token]) {
@@ -277,15 +292,15 @@ contract ThunderLoan is
     ) external onlyOwner returns (AssetToken) {
         if (allowed) {
             if (address(s_tokenToAssetToken[token]) != address(0)) {
-                revert ThunderLoan__AlreadyAllowed();
+                revert ThunderLoan__AlreadyAllowed(); // @audit-info: Pass the token address in the error msg
             }
             string memory name = string.concat(
                 "ThunderLoan ",
-                IERC20Metadata(address(token)).name()
+                IERC20Metadata(address(token)).name() // @audit-info: what if the token doesn't have a name?
             );
             string memory symbol = string.concat(
                 "tl",
-                IERC20Metadata(address(token)).symbol()
+                IERC20Metadata(address(token)).symbol() // @audit-info: what if the token doesn't have a symbol?
             );
             AssetToken assetToken = new AssetToken(
                 address(this),
@@ -304,6 +319,7 @@ contract ThunderLoan is
         }
     }
 
+    // @audit: where is the natspec??
     function getCalculatedFee(
         IERC20 token,
         uint256 amount
