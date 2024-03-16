@@ -286,6 +286,7 @@ contract ThunderLoan is
     }
 
     // follow up: Centralisation risk
+    // @audit: Natspec missing!
     function setAllowedToken(
         IERC20 token,
         bool allowed
@@ -320,13 +321,15 @@ contract ThunderLoan is
     }
 
     // @audit: where is the natspec??
+    // @param token token being borrowed
+    // @param amount amount being borrowed
     function getCalculatedFee(
         IERC20 token,
         uint256 amount
     ) public view returns (uint256 fee) {
         //slither-disable-next-line divide-before-multiply
         uint256 valueOfBorrowedToken = (amount *
-            getPriceInWeth(address(token))) / s_feePrecision;
+            getPriceInWeth(address(token))) / s_feePrecision; // e that's why we are using TSWAP
         //slither-disable-next-line divide-before-multiply
         fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
     }
