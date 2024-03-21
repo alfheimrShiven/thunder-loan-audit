@@ -328,8 +328,11 @@ contract ThunderLoan is
         uint256 amount
     ) public view returns (uint256 fee) {
         //slither-disable-next-line divide-before-multiply
+
+        // @audit-high Fee value should be in the unit of token borrowed, not in wETH. We should not be using `getPriceInWeth(..)`
         uint256 valueOfBorrowedToken = (amount *
             getPriceInWeth(address(token))) / s_feePrecision; // e that's why we are using TSWAP
+
         //slither-disable-next-line divide-before-multiply
         fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
     }

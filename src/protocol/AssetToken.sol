@@ -59,8 +59,8 @@ contract AssetToken is ERC20 {
     constructor(
         address thunderLoan,
         IERC20 underlying,
-        // q Are underlying token (USDC) stored in AssetToken.sol instead of Thunderloan.sol?
-        // q where are the underlying tokens stored?
+        // qanswered Are underlying token (USDC) stored in AssetToken.sol instead of Thunderloan.sol?
+        // a yess!
         string memory assetName,
         string memory assetSymbol
     )
