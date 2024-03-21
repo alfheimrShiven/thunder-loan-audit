@@ -86,9 +86,10 @@ contract AssetToken is ERC20 {
         address to,
         uint256 amount
     ) external onlyThunderLoan {
-        // q any weird ERC20 stuff that we should be aware of?
-        // q What if USDC blacklists AssetToken.sol
-        // q What if USDC blacklists Thunderloan.sol
+        // qanswered any weird ERC20 stuff that we should be aware of?
+        // qanswered What if USDC blacklists AssetToken.sol
+        // qanswered What if USDC blacklists Thunderloan.sol
+        // @audit-medium: the protocol will be frozen!
         i_underlying.safeTransfer(to, amount);
     }
 
