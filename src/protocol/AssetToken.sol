@@ -89,7 +89,7 @@ contract AssetToken is ERC20 {
         // qanswered any weird ERC20 stuff that we should be aware of?
         // qanswered What if USDC blacklists AssetToken.sol
         // qanswered What if USDC blacklists Thunderloan.sol
-        // @audit-medium: the protocol will be frozen!
+        // @audit-medium: the protocol will be frozen which can block the underlying tokens/assets from being redeemed by the liquidity provider.
         i_underlying.safeTransfer(to, amount);
     }
 
@@ -109,7 +109,8 @@ contract AssetToken is ERC20 {
         // newExchangeRate = 1 (6 + 1) / 6
         // newExchangeRate = 1.16
 
-        // q what if the totalSupply = 0? Won't that break the system?
+        // qanswered what if the totalSupply = 0? Won't that break the system?
+        // a totalSupply() will never return 0 as AssetToken is being minted right before depositing the underlying token in `ThunderLoan::deposit()`
         // @audit-gas: reading from storage `s_exchangeRate` too many times. Maybe use a memory variable to save gas.
         uint256 newExchangeRate = (s_exchangeRate * (totalSupply() + fee)) /
             totalSupply();

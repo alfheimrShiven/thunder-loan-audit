@@ -105,7 +105,7 @@ contract ThunderLoan is
     mapping(IERC20 => AssetToken) public s_tokenToAssetToken;
 
     // The fee in WEI, it should have 18 decimals. Each flash loan takes a flat fee of the token price.
-    // @audit-info: `s_feePrecision` should be immutable.
+    // @audit-info: `s_feePrecision` should be immutable/constant.
     uint256 private s_feePrecision;
     uint256 private s_flashLoanFee; // 0.3% ETH fee
 
@@ -189,13 +189,11 @@ contract ThunderLoan is
             exchangeRate;
         emit Deposit(msg.sender, token, amount);
         assetToken.mint(msg.sender, mintAmount);
-        // @audit-followup
-        // q why is the flash loan fee calculation happening in deposit()?
+        // @audit-high
+        // Flash loan exchange rate should not be changed during deposit().
         uint256 calculatedFee = getCalculatedFee(token, amount);
-
-        // q why are we updating exchange rate on deposit?
-        // q Is it because the total supply increases?
         assetToken.updateExchangeRate(calculatedFee);
+
         token.safeTransferFrom(msg.sender, address(assetToken), amount);
     }
 
@@ -241,7 +239,7 @@ contract ThunderLoan is
         uint256 fee = getCalculatedFee(token, amount); // e the fee for processing the flash loan
 
         // slither-disable-next-line reentrancy-vulnerabilities-2 reentrancy-vulnerabilities-3
-        assetToken.updateExchangeRate(fee); // e basically, the protocol will earn a `fee` from the loaner for the particular token being loaned, thus increasing the total supply of that token in the protocol. And if the total supply increases, the exchange rate for that particular token will change (should ideally increase with increase in supply).
+        assetToken.updateExchangeRate(fee); // e basically, the protocol will earn a `fee` from the loaner for the particular token being loaned, thus increasing the total supply of that token in the protocol. And if the total supply increases, the exchange rate for that particular token will change (should ideally increase with increase in supply) which will reward the liquidity provider.
 
         emit FlashLoan(receiverAddress, token, amount, fee, params);
 
